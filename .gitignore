@@ -1,6 +1,9 @@
 # Backups directory
 backups/
 
+# Release zip files
+*.zip
+
 # macOS
 .DS_Store
 
