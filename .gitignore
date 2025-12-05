@@ -1,0 +1,13 @@
+# Backups directory
+backups/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Temporary files
+*.backup
+*.tmp
