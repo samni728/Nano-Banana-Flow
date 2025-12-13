@@ -2,7 +2,7 @@
 
 > 大香蕉批量生图神器 - Gemini AI 图片批量生成工具
 
-[![Version](https://img.shields.io/badge/version-1.1.0-gold.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
+[![Version](https://img.shields.io/badge/version-1.1.1-gold.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 
 [English](README_EN.md)
@@ -44,6 +44,7 @@
 ### 第一步：打开 Gemini 页面
 
 访问 [https://gemini.google.com/app](https://gemini.google.com/app) 并确保已登录
+> **注**：v1.1.1 版本已完整支持繁体中文（台湾地区）界面，其他语言区域尚未完成全部测试。
 
 ### 第二步：准备提示词
 
@@ -103,6 +104,11 @@ Nano-Banana-Flow/
 - **Chrome APIs**：Downloads API、Storage API
 
 ## 📝 更新日志
+
+### v1.1.1 (2025-12-14)
+- ✅ 新增对繁体中文（台湾地区 `hl=zh-TW`）界面的支持
+- ✅ 修复了在繁体环境下无法识别"发送"和"停止"按钮的问题
+- ⚠️ 注意：目前已验证台湾地区，其他语言环境尚未完整测试
 
 ### v1.1.0 (2025-12-05)
 - ✅ 修复了 statusIndicator 缺失导致的初始化错误

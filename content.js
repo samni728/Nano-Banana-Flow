@@ -231,6 +231,8 @@ async function clickSendButton() {
                 const ariaLabel = (b.getAttribute('aria-label') || '').toLowerCase();
                 return ariaLabel.includes('send') ||
                     ariaLabel.includes('发送') ||
+                    ariaLabel.includes('傳送') || // 繁体中文
+                    ariaLabel.includes('提交') || // 繁体中文/通用
                     ariaLabel.includes('submit');
             });
 
@@ -286,12 +288,12 @@ async function checkIfInImageMode() {
             return elements.find(el => {
                 const text = el.textContent;
                 const isSmall = el.offsetHeight < 50 && el.offsetWidth < 200;
-                return isSmall && (text === '图片' || text === 'Image' || text.includes('图像'));
+                return isSmall && (text === '图片' || text === '圖片' || text === 'Image' || text.includes('图像') || text.includes('圖像'));
             });
         },
         () => {
             // 查找图片图标
-            const icons = Array.from(document.querySelectorAll('[aria-label*="图片"], [aria-label*="Image"]'));
+            const icons = Array.from(document.querySelectorAll('[aria-label*="图片"], [aria-label*="圖片"], [aria-label*="Image"]'));
             return icons.find(icon => icon.closest('button') || icon.closest('div[role="button"]'));
         }
     ];
@@ -340,6 +342,7 @@ async function selectImageModeFromToolsMenu() {
                 const text = opt.textContent;
                 return text.includes('生成图片') ||
                     text.includes('生成图像') ||
+                    text.includes('產生圖片') || // 繁体中文
                     text.includes('Generate image') ||
                     text.includes('Image generation');
             });
@@ -624,7 +627,8 @@ async function waitForIdle() {
             // 查找"停止生成"按钮（多种可能的选择器）
             const stopButton = document.querySelector(
                 'button[aria-label*="Stop"], ' +
-                'button[aria-label*="停止"], ' +
+                'button[aria-label*="停止"], ' + // 简繁通用
+                'button[aria-label*="停止回應"], ' + // 繁体中文
                 'button[aria-label*="stop"], ' +
                 'button mat-icon[data-mat-icon-name="stop"]'
             );
@@ -634,6 +638,7 @@ async function waitForIdle() {
                 const sendButton = document.querySelector(
                     'button[aria-label*="Send"], ' +
                     'button[aria-label*="发送"], ' +
+                    'button[aria-label*="傳送"], ' + // 繁体中文
                     'button[aria-label*="send"]'
                 );
 
