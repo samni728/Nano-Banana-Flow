@@ -122,10 +122,10 @@ Nano-Banana-Flow/
 ## 📝 Changelog
 
 ### v1.1.1 (2025-12-14)
-- ✅ Added full support for Traditional Chinese (Taiwan `hl=zh-TW`) interface
+- ✅ Added full support for Traditional Chinese (Hong Kong, Macau, Taiwan) interface
 - ✅ Fixed issue where "Send" and "Stop" buttons were unrecognized in Traditional Chinese
 - ✅ Added compatibility for URL parameters like `?hl=zh-TW`
-- ⚠️ Note: Taiwan region tested; other regions pending verification
+- ⚠️ Note: Hong Kong, Macau, Taiwan regions tested; other regions pending verification
 
 ### v1.1.0 (2025-12-05)
 - ✅ Fixed statusIndicator missing initialization error
