@@ -1,8 +1,10 @@
 # 🍌 Nano Banana Flow
 
+> **As long as the banana 🍌 works, generating images till dawn.**
+>
 > Batch Image Generation Tool for Gemini AI
 
-[![Version](https://img.shields.io/badge/version-1.1.0-gold.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
+[![Version](https://img.shields.io/badge/version-1.1.1-gold.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 
 [中文文档](README.md)
@@ -44,6 +46,7 @@ A powerful Chrome extension that helps you batch generate images on Gemini and a
 ### Step 1: Open Gemini
 
 Visit [https://gemini.google.com/app](https://gemini.google.com/app) and make sure you're logged in
+> **Note**: v1.1.1 now fully supports Traditional Chinese (Taiwan region) interface. Other regions are not fully tested.
 
 ### Step 2: Prepare Prompts
 
@@ -70,16 +73,30 @@ A blooming rose flower
 
 ## 🔧 FAQ
 
-### Q: Extension can't find the input field?
-Make sure you're on `https://gemini.google.com/app` and the page is fully loaded. Try refreshing if the issue persists.
+### Basic
+- **Q: What does this tool do?**
+  It allows you to input multiple prompts at once, automatically generating images one by one and downloading them locally, without manual intervention.
+- **Q: How to input prompts?**
+  One prompt per line.
+- **Q: Filename format?**
+  Sequential naming: `page1.png`, `page2.png`... Saved in your browser's default download folder.
 
-### Q: Image generation timeout?
-Default timeout is 2 minutes. If your network is slow, check your connection.
+### Troubleshooting
+- **Q: Extension can't find the input field?**
+  1. Ensure you are on `https://gemini.google.com/app`.
+  2. **Refresh the page** (issues often occur if the input box hasn't loaded yet).
+  3. Check if your network node redirects the URL.
+- **Q: My interface is in Traditional Chinese?**
+  Please upgrade to **v1.1.1** or higher (fixed compatibility). If issues persist, try temporarily switching your system/account language to English or Simplified Chinese.
+- **Q: Files are downloaded as .html?**
+  This is because the browser blocked automatic downloads. Click the "Lock" icon in the address bar -> Site Settings -> **Allow Automatic downloads**.
+- **Q: Sidebar blocking the view?**
+  Click the extension icon to toggle the sidebar. This won't interrupt the task.
 
-### Q: Download failed?
-- Ensure the extension has download permissions
-- Try using a simple directory name (avoid special characters)
-- Refresh the Gemini page and try again
+### Downloads
+*   **GitHub Releases**: [Download Here](https://github.com/AppleResearcher/Nano-Banana-Flow/releases) (Latest)
+*   **Baidu Pan**: [Download](https://pan.baidu.com/s/1I9DMwu_NQVhAqIGeqgEa7g?pwd=saec) (Code: `saec`)
+*   **Google Drive**: [Download](https://drive.google.com/file/d/1aK4ls54SSc64WcK56pQpYyKxoIEXIiUv/view?usp=sharing)
 
 ## 📁 Project Structure
 
@@ -103,6 +120,12 @@ Nano-Banana-Flow/
 - **Chrome APIs**: Downloads API, Storage API
 
 ## 📝 Changelog
+
+### v1.1.1 (2025-12-14)
+- ✅ Added full support for Traditional Chinese (Taiwan `hl=zh-TW`) interface
+- ✅ Fixed issue where "Send" and "Stop" buttons were unrecognized in Traditional Chinese
+- ✅ Added compatibility for URL parameters like `?hl=zh-TW`
+- ⚠️ Note: Taiwan region tested; other regions pending verification
 
 ### v1.1.0 (2025-12-05)
 - ✅ Fixed statusIndicator missing initialization error
