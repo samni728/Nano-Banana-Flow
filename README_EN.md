@@ -46,7 +46,7 @@ A powerful Chrome extension that helps you batch generate images on Gemini and a
 ### Step 1: Open Gemini
 
 Visit [https://gemini.google.com/app](https://gemini.google.com/app) and make sure you're logged in
-> **Note**: v1.1.1 now fully supports Traditional Chinese (Taiwan region) interface. Other regions are not fully tested.
+> **Note**: v1.1.1 now fully supports Traditional Chinese interface (Hong Kong, Macau, Taiwan).
 
 ### Step 2: Prepare Prompts
 
