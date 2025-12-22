@@ -803,6 +803,28 @@ async function uploadViaDropEvent(base64Images) {
     console.log('[Upload] ✅ 拖放完成');
 }
 
+// 查找输入区域
+function findInputArea() {
+    const selectors = [
+        'div[contenteditable="true"]',
+        '[role="textbox"]',
+        'textarea',
+        '.input-area',
+        '[data-placeholder]'
+    ];
+
+    for (const sel of selectors) {
+        const elem = document.querySelector(sel);
+        if (elem) {
+            console.log('[Upload] 找到输入区域:', sel);
+            return elem;
+        }
+    }
+
+    console.log('[Upload] ⚠️ 使用 body 作为拖放目标');
+    return document.body;
+}
+
 async function waitForUploadComplete() {
     // 轮询检测：上传后会出现预览图
     const maxWait = 15000;
