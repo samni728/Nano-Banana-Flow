@@ -4,7 +4,7 @@
 >
 > Batch Image Generation Tool for Gemini AI
 
-[![Version](https://img.shields.io/badge/version-1.1.1-gold.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
+[![Version](https://img.shields.io/badge/version-1.2.0-gold.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 
 [中文文档](README.md)
@@ -14,11 +14,22 @@ A powerful Chrome extension that helps you batch generate images on Gemini and a
 ## ✨ Features
 
 - 🎨 **Batch Generation**: Input multiple prompts at once, automatically generate images one by one
-- 📥 **Auto Download**: Generated images are automatically downloaded with sequential naming (page1.png, page2.png...)
+- 📥 **Auto Download**: Generated images are automatically downloaded with sequential naming
+- 📄 **TXT Import**: [v1.2.0+] Load bulk prompts from local .txt files with one click.
+- 🖼️ **Image-to-Image**: [v1.2.0+] Support uploading local reference images with smart matching.
 - 📊 **Real-time Progress**: Intuitive progress bar showing current generation status
 - 💾 **Smart Save**: Automatically saves your last input prompts
-- 🎯 **Easy to Use**: Modern UI design with intuitive operation
 - ⏹️ **Task Control**: Stop running tasks at any time
+
+---
+
+## 🚀 Usage Tips
+### Import & Matching (New in v1.2.0)
+1. **Prompt Import**: Click **[📄 Import]** to select a `.txt` file.
+2. **Image Matching**:
+   - Click **[🖼️ Image]** to batch select local images.
+   - **Naming Rule**: Filenames must start with `LineNumber_`. E.g., `1_style.jpg` matches the 1st prompt.
+   - **Multi-image**: Supports multiple images for a single line.
 
 ## 📦 Installation
 
@@ -120,6 +131,11 @@ Nano-Banana-Flow/
 - **Chrome APIs**: Downloads API, Storage API
 
 ## 📝 Changelog
+
+### v1.2.0 (2025-12-22)
+- ✅ **TXT Import Support**: One-click bulk loading of prompts.
+- ✅ **Image-to-Image Automation**: Match local reference images via filename line numbers.
+- ✅ **Workflow Optimization**: Simulated image uploading with state detection for Gemini.
 
 ### v1.1.1 (2025-12-14)
 - ✅ Added full support for Traditional Chinese (Hong Kong, Macau, Taiwan) interface

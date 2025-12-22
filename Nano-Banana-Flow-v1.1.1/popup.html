@@ -49,24 +49,13 @@
       <!-- Prompts Input -->
       <div class="input-group prompt-group">
         <label for="promptInput">
-          <div class="label-with-actions">
-            <span><span class="icon">✨</span> 提示词列表 (每行一张)</span>
-            <div class="import-tools">
-              <button id="importTxtBtn" class="tool-btn" title="导入 TXT 文件">📄 导入</button>
-              <button id="importImagesBtn" class="tool-btn" title="批量导入参考图 (支持多选)">🖼️ 识图</button>
-            </div>
-          </div>
+          <span class="icon">✨</span> 提示词列表 (每行一张)
         </label>
         <textarea id="promptInput" class="glass-input prompt-textarea" placeholder="在此输入提示词，一段对应一张图片…
 示例：
 一只可爱的小猫
 一只在吃香蕉的大猩猩"></textarea>
-        <div id="matchStatus" class="match-status hidden">已关联 0 张参考图</div>
         <div id="promptCount" class="prompt-count">0 条提示词已被识别，随时可以开始</div>
-
-        <!-- Hidden Inputs -->
-        <input type="file" id="txtFileInput" accept=".txt" style="display: none;">
-        <input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
       </div>
 
       <!-- Action Area -->

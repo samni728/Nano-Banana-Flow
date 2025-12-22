@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // --- 处理启动生成请求 ---
     if (request.action === 'startGeneration') {
-        console.log('[BG] 启动生成任务，任务数量:', request.tasks.length);
+        console.log('[BG] 启动生成任务，提示词数量:', request.prompts.length);
 
         if (isProcessing) {
             sendResponse({ success: false, error: '已有任务正在执行中' });
@@ -31,12 +31,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         currentTabId = request.tabId;
 
         // 初始化任务队列
-        taskQueue = request.tasks.map((task, index) => ({
-            prompt: task.prompt,
-            images: task.images, // 新增：保存图片数据 (Base64)
-            directory: request.directory,
+        taskQueue = request.prompts.map((prompt, index) => ({
+            prompt,
+            directory: request.directory, // 保存目录信息
             index: index + 1,
-            total: request.tasks.length,
+            total: request.prompts.length,
             status: 'pending'
         }));
 
@@ -156,8 +155,7 @@ async function processQueue() {
         const response = await chrome.tabs.sendMessage(currentTabId, {
             action: 'generateImage',
             prompt: task.prompt,
-            images: task.images, // 新增：传递图片数据
-            directory: task.directory,
+            directory: task.directory, // 传递目录参数
             index: task.index,
             total: task.total
         });

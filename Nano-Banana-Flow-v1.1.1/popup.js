@@ -11,64 +11,8 @@ const currentStatus = document.getElementById('currentStatus');
 const errorMsg = document.getElementById('errorMsg');
 const statusIndicator = document.getElementById('statusIndicator');
 
-// New Advanced Features DOM
-const importTxtBtn = document.getElementById('importTxtBtn');
-const importImagesBtn = document.getElementById('importImagesBtn');
-const txtFileInput = document.getElementById('txtFileInput');
-const imageFileInput = document.getElementById('imageFileInput');
-const matchStatus = document.getElementById('matchStatus');
-
 // State Management
 let isRunning = false;
-let associatedImages = new Map(); // LineNumber -> File[]
-
-// --- File Import Handlers ---
-
-importTxtBtn.addEventListener('click', () => txtFileInput.click());
-importImagesBtn.addEventListener('click', () => imageFileInput.click());
-
-txtFileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    promptsTextarea.value = event.target.result;
-    promptsTextarea.dispatchEvent(new Event('input'));
-  };
-  reader.readAsText(file);
-});
-
-imageFileInput.addEventListener('change', (e) => {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
-
-  associatedImages.clear();
-  files.forEach(file => {
-    // Regex: Match numbers at start of filename
-    const match = file.name.match(/^(\d+)/);
-    if (match) {
-      const lineNum = parseInt(match[1], 10);
-      if (!associatedImages.has(lineNum)) {
-        associatedImages.set(lineNum, []);
-      }
-      associatedImages.get(lineNum).push(file);
-    }
-  });
-  updateMatchingUI();
-});
-
-function updateMatchingUI() {
-  const totalImgs = Array.from(associatedImages.values()).flat().length;
-  const totalLines = associatedImages.size;
-  if (totalImgs > 0) {
-    matchStatus.textContent = `已关联 ${totalImgs} 张参考图 (共涉及 ${totalLines} 条提示词)`;
-    matchStatus.classList.remove('hidden');
-  } else {
-    matchStatus.classList.add('hidden');
-  }
-}
-
-// --- Original Logic ---
 
 // Auto-resize textarea and update count
 promptsTextarea.addEventListener('input', function () {
@@ -76,8 +20,6 @@ promptsTextarea.addEventListener('input', function () {
   this.style.height = (this.scrollHeight) + 'px';
   chrome.storage.local.set({ lastPrompts: this.value });
   updatePromptCount(this.value);
-  // Re-sync image matching UI if prompt count changes? 
-  // For now just keep simple.
 });
 
 function updatePromptCount(text) {
@@ -92,8 +34,6 @@ clearBtn.addEventListener('click', () => {
     promptsTextarea.style.height = 'auto';
     chrome.storage.local.remove('lastPrompts');
     updatePromptCount('');
-    associatedImages.clear();
-    updateMatchingUI();
   }
 });
 
@@ -142,39 +82,26 @@ async function handleStart() {
     return;
   }
 
-  // Get raw lines to preserve empty lines for indexing if needed, 
-  // but usually users want 1-based index matching visible lines.
-  const lines = input.split('\n');
-  const tasks = [];
+  const prompts = input.split('\n').filter(line => line.trim() !== '');
+  console.log('[Popup] 📝 识别到提示词数量:', prompts.length);
 
-  let validTaskCount = 0;
-  lines.forEach((line, index) => {
-    const prompt = line.trim();
-    if (prompt) {
-      validTaskCount++;
-      const lineNum = index + 1;
-      tasks.push({
-        prompt: prompt,
-        lineNum: lineNum,
-        images: associatedImages.get(lineNum) || []
-      });
-    }
-  });
-
-  if (tasks.length === 0) {
+  if (prompts.length === 0) {
     showError('请输入有效的提示词');
     return;
   }
 
   // Check if on Gemini page
+  console.log('[Popup] 🔍 查询当前标签页...');
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  console.log('[Popup] 📋 当前标签页:', tab?.url);
+
   if (!tab.url || !tab.url.includes('gemini.google.com')) {
     showError('请先打开 Gemini 页面 (https://gemini.google.com/app)');
     return;
   }
 
-  console.log('[Popup] ✅ 准备全量任务集:', tasks.length);
-  startGeneration(tasks, directory);
+  console.log('[Popup] ✅ 验证通过，开始生成');
+  startGeneration(prompts, directory);
 }
 
 async function handleStop() {
@@ -190,30 +117,26 @@ async function handleStop() {
   }
 }
 
-async function startGeneration(tasks, directory) {
+async function startGeneration(prompts, directory) {
   setRunningState(true);
   hideError();
-  showProgress(0, tasks.length, '正在处理文件...');
+  showProgress(0, prompts.length, '正在准备...');
   showStatus('Running', true);
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
-    // Prepare Tasks: Convert Files to Base64 for message passing
-    const processedTasks = await Promise.all(tasks.map(async (task) => {
-      const imgData = await Promise.all(task.images.map(file => fileToBase64(file)));
-      return {
-        prompt: task.prompt,
-        images: imgData // Array of strings (base64)
-      };
-    }));
+    console.log('[Popup] 📤 准备发送消息到 background...');
+    console.log('[Popup] 📤 TabId:', tab.id);
+    console.log('[Popup] 📤 Prompts:', prompts.length, '条');
 
     const response = await chrome.runtime.sendMessage({
       action: 'startGeneration',
-      tasks: processedTasks,
+      prompts: prompts,
       directory: directory,
       tabId: tab.id
     });
+
+    console.log('[Popup] 📥 收到响应:', response);
 
     if (response && response.success) {
       console.log('[Popup] ✅ 任务启动成功');
@@ -222,19 +145,15 @@ async function startGeneration(tasks, directory) {
     }
   } catch (error) {
     console.error('[Popup] ❌ 启动失败:', error);
-    showError('启动失败: ' + error.message);
+    let msg = '启动失败: ';
+    if (error.message.includes('Could not establish connection')) {
+      msg = '无法连接后台，请刷新页面后重试';
+    } else {
+      msg += error.message;
+    }
+    showError(msg);
     resetUI();
   }
-}
-
-// Helpers
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(file);
-  });
 }
 
 // UI Helpers

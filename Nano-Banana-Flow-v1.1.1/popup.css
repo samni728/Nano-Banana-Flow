@@ -238,43 +238,6 @@ body {
   font-weight: 500;
 }
 
-.label-with-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.import-tools {
-  display: flex;
-  gap: 8px;
-}
-
-.tool-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-.tool-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: var(--accent-gold);
-}
-
-.match-status {
-  font-size: 11px;
-  color: var(--accent-gold);
-  margin-top: 4px;
-  text-align: right;
-  font-style: italic;
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

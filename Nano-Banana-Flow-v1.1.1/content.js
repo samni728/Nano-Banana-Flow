@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.action === 'generateImage') {
         console.log('[Content] 🎨 开始处理生成请求:', message.prompt?.substring(0, 30) + '...');
-        handleGenerateImage(message.prompt, message.images || [], message.directory, message.index, message.total)
+        handleGenerateImage(message.prompt, message.directory, message.index, message.total)
             .then(result => {
                 console.log('[Content] ✅ 生成完成，返回结果');
                 sendResponse(result);
@@ -33,10 +33,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // 处理单个图片生成任务
-async function handleGenerateImage(prompt, images, directory, index, total) {
+async function handleGenerateImage(prompt, directory, index, total) {
     console.log(`\n========== 开始生成第 ${index}/${total} 张图片 ==========`);
     console.log(`提示词: ${prompt}`);
-    if (images && images.length > 0) console.log(`关联图片数量: ${images.length}`);
     if (directory) console.log(`保存目录: ${directory}`);
 
     try {
@@ -63,14 +62,6 @@ async function handleGenerateImage(prompt, images, directory, index, total) {
         // ========== 步骤 0.5: 记录当前图片数量 ==========
         const preGenerationImageCount = countValidImages();
         console.log(`[步骤 0.5/${index}] 当前有效图片数量: ${preGenerationImageCount}`);
-
-        // ========== 步骤 0.8: 上传参考图 (如果存在) ==========
-        if (images && images.length > 0) {
-            console.log(`[步骤 0.8/${index}] 正在上传 ${images.length} 张参考图...`);
-            await uploadImagesToGemini(images);
-            console.log(`[步骤 0.8/${index}] 参考图上传完成，等待解析...`);
-            await sleep(2000); // 给 Gemini 一点处理图片的时间
-        }
 
         // ========== 步骤 1: 输入提示词（自动触发图片生成） ==========
         // 【优化】不再手动点击工具菜单，改用提示词工程
@@ -660,60 +651,6 @@ async function waitForIdle() {
                 console.log('⏳ Gemini正在生成中，继续等待...');
             }
         }, 1000); // 每秒检查一次
-    });
-}
-
-// ========== 核心函数：上传图片到 Gemini ==========
-async function uploadImagesToGemini(base64Images) {
-    console.log('正在执行图片上传模拟...');
-
-    // 1. 查找 Gemini 的隐藏上传 input
-    // 对于 Gemini，通常在输入框附近有一个 input[type="file"]
-    const fileInput = document.querySelector('input[type="file"]');
-    if (!fileInput) {
-        throw new Error('未找到 Gemini 上传控件（请确保页面已加载完毕）');
-    }
-
-    // 2. 将 Base64 转换为 File 对象
-    const files = await Promise.all(base64Images.map(async (b64, idx) => {
-        const response = await fetch(b64);
-        const blob = await response.blob();
-        return new File([blob], `ref_image_${idx}.png`, { type: blob.type });
-    }));
-
-    // 3. 构造 DataTransfer 模拟拖放/选择行为
-    const dataTransfer = new DataTransfer();
-    files.forEach(file => dataTransfer.items.add(file));
-    fileInput.files = dataTransfer.files;
-
-    // 4. 触发 change 事件告知页面有文件
-    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-    // 5. 等待上传完成
-    // 通常上传时会有一个进度条或预览图出现
-    console.log('上传中，等待预览图出现...');
-    await waitForUploadComplete();
-}
-
-async function waitForUploadComplete() {
-    // 轮询检测：Gemini 上传图片后会在输入框上方出现预览图（带关闭按钮或加载状态）
-    // 我们可以查找包含图片的预览区域
-    const maxWait = 15000;
-    const start = Date.now();
-
-    return new Promise((resolve) => {
-        const check = setInterval(() => {
-            // 简单的检测策略：查找被添加到回复区域/输入区域的预览图片元素
-            // 或者检测上传进度指示器消失
-            // 【通用策略】等待 2 秒作为基础，并在 DOM 中查找 preview 相关的元素
-            const previewImage = document.querySelector('img[src^="blob:"]'); // 上传后通常是 blob url 预览
-
-            if (previewImage || Date.now() - start > maxWait) {
-                console.log(previewImage ? '✅ 预览图已出现' : '⚠️ 等待上传超时，尝试继续');
-                clearInterval(check);
-                resolve();
-            }
-        }, 800);
     });
 }
 
