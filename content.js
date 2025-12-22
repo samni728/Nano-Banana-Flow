@@ -667,49 +667,121 @@ async function waitForIdle() {
 async function uploadImagesToGemini(base64Images) {
     console.log('正在执行图片上传模拟...');
 
-    // 1. 查找 Gemini 的隐藏上传 input
-    // 对于 Gemini，通常在输入框附近有一个 input[type="file"]
-    const fileInput = document.querySelector('input[type="file"]');
+    // 1. 查找 Gemini 的隐藏上传 input（尝试多种选择器）
+    const inputSelectors = [
+        'input[type="file"]',
+        'input[accept*="image"]',
+        'input[multiple][type="file"]',
+        'input.file-input',
+        '[data-file-input]'
+    ];
+
+    let fileInput = null;
+    for (const sel of inputSelectors) {
+        fileInput = document.querySelector(sel);
+        if (fileInput) {
+            console.log('✅ 找到上传控件:', sel);
+            break;
+        }
+    }
+
+    // 2. 如果仍未找到，尝试点击"添加文件"按钮来创建/显示 input
     if (!fileInput) {
+        console.log('⚠️ 未找到隐藏的 input，尝试点击上传按钮...');
+
+        // 查找可能的上传按钮（+ 号、附件图标等）
+        const uploadBtnSelectors = [
+            'button[aria-label*="Upload"]',
+            'button[aria-label*="上传"]',
+            'button[aria-label*="上傳"]',
+            'button[aria-label*="Add"]',
+            'button[aria-label*="添加"]',
+            'button[aria-label*="Attach"]',
+            'button[aria-label*="附件"]',
+            '[data-tooltip*="Upload"]',
+            '[data-tooltip*="上传"]'
+        ];
+
+        let uploadBtn = null;
+        for (const sel of uploadBtnSelectors) {
+            uploadBtn = document.querySelector(sel);
+            if (uploadBtn) {
+                console.log('✅ 找到上传按钮:', sel);
+                uploadBtn.click();
+                await sleep(1000);
+                break;
+            }
+        }
+
+        // 再次尝试查找 input
+        for (const sel of inputSelectors) {
+            fileInput = document.querySelector(sel);
+            if (fileInput) {
+                console.log('✅ 点击后找到上传控件:', sel);
+                break;
+            }
+        }
+    }
+
+    if (!fileInput) {
+        // 最后的备选：列出页面上所有的 input 元素供调试
+        const allInputs = document.querySelectorAll('input');
+        console.log('⚠️ 页面上的所有 input 元素:', allInputs.length);
+        allInputs.forEach((inp, i) => {
+            console.log(`  input[${i}]: type=${inp.type}, id=${inp.id}, class=${inp.className}`);
+        });
         throw new Error('未找到 Gemini 上传控件（请确保页面已加载完毕）');
     }
 
-    // 2. 将 Base64 转换为 File 对象
+    // 3. 将 Base64 转换为 File 对象
     const files = await Promise.all(base64Images.map(async (b64, idx) => {
         const response = await fetch(b64);
         const blob = await response.blob();
         return new File([blob], `ref_image_${idx}.png`, { type: blob.type });
     }));
 
-    // 3. 构造 DataTransfer 模拟拖放/选择行为
+    console.log('📦 已准备', files.length, '个文件对象');
+
+    // 4. 构造 DataTransfer 模拟拖放/选择行为
     const dataTransfer = new DataTransfer();
     files.forEach(file => dataTransfer.items.add(file));
     fileInput.files = dataTransfer.files;
 
-    // 4. 触发 change 事件告知页面有文件
+    // 5. 触发 change 事件告知页面有文件
     fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    fileInput.dispatchEvent(new Event('input', { bubbles: true }));
 
-    // 5. 等待上传完成
-    // 通常上传时会有一个进度条或预览图出现
+    // 6. 等待上传完成
     console.log('上传中，等待预览图出现...');
     await waitForUploadComplete();
 }
 
 async function waitForUploadComplete() {
     // 轮询检测：Gemini 上传图片后会在输入框上方出现预览图（带关闭按钮或加载状态）
-    // 我们可以查找包含图片的预览区域
     const maxWait = 15000;
     const start = Date.now();
 
     return new Promise((resolve) => {
         const check = setInterval(() => {
-            // 简单的检测策略：查找被添加到回复区域/输入区域的预览图片元素
-            // 或者检测上传进度指示器消失
-            // 【通用策略】等待 2 秒作为基础，并在 DOM 中查找 preview 相关的元素
-            const previewImage = document.querySelector('img[src^="blob:"]'); // 上传后通常是 blob url 预览
+            // 检测策略：查找预览图片元素或上传成功标志
+            const previewSelectors = [
+                'img[src^="blob:"]',  // Blob URL 预览
+                'img[src*="data:"]',  // Data URL 预览
+                '[class*="preview"]', // 预览容器
+                '[class*="thumbnail"]', // 缩略图
+                '[class*="attachment"]' // 附件区域
+            ];
 
-            if (previewImage || Date.now() - start > maxWait) {
-                console.log(previewImage ? '✅ 预览图已出现' : '⚠️ 等待上传超时，尝试继续');
+            let found = false;
+            for (const sel of previewSelectors) {
+                if (document.querySelector(sel)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found || Date.now() - start > maxWait) {
+                console.log(found ? '✅ 预览图/附件已出现' : '⚠️ 等待上传超时，尝试继续');
                 clearInterval(check);
                 resolve();
             }
