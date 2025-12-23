@@ -52,8 +52,9 @@
           <div class="label-with-actions">
             <span><span class="icon">✨</span> 提示词列表 (每行一张)</span>
             <div class="import-tools">
-              <button id="importTxtBtn" class="tool-btn" title="导入 TXT 文件">📄 导入</button>
-              <button id="importImagesBtn" class="tool-btn" title="批量导入参考图 (支持多选)">🖼️ 识图</button>
+              <button id="importTxtBtn" class="tool-btn" title="导入 TXT 文件">📄 导入TXT</button>
+              <button id="importImagesBtn" class="tool-btn" title="选择单张或多张图片 (按住 Shift/Command 多选)">🖼️ 选择图片</button>
+              <button id="importFolderBtn" class="tool-btn" title="导入整个文件夹的图片">📂 导入文件夹</button>
             </div>
           </div>
         </label>
@@ -68,6 +69,7 @@
         <!-- Hidden Inputs -->
         <input type="file" id="txtFileInput" accept=".txt" style="display: none;">
         <input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
+        <input type="file" id="folderInput" webkitdirectory directory style="display: none;">
       </div>
 
       <!-- Action Area -->
