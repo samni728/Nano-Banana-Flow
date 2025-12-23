@@ -663,69 +663,77 @@ async function waitForIdle() {
     });
 }
 
-// ========== 核心函数：上传图片到 Gemini (粘贴事件方案) ==========
+// ========== 核心函数：上传图片到 Gemini (粘贴方案) ==========
 async function uploadImagesToGemini(base64Images) {
-    console.log('[Upload] 🎯 使用 Paste 事件方案，共', base64Images.length, '张图片');
-
-    // 策略：模拟 Ctrl+V 粘贴操作
-    // 原理：Gemini 原生支持粘贴图片，且粘贴事件的安全检查通常比文件选择器宽松
+    console.log('[Upload] 🚀 开始粘贴上传流程 (Plan D)，共', base64Images.length, '张图片');
 
     // 1. 找到输入框
-    const inputEl = document.querySelector('div[contenteditable="true"]');
-    if (!inputEl) {
-        throw new Error('[Upload] ❌ 未找到可编辑输入框');
+    const inputArea = findInputArea();
+    if (!inputArea) {
+        throw new Error('[Upload] ❌ 未找到输入区域');
     }
 
-    console.log('[Upload] ✅ 找到输入框');
+    // 聚焦输入框确保事件正确处理
+    inputArea.focus();
+    await sleep(200);
 
-    // 2. 转换文件
-    const files = await Promise.all(base64Images.map(async (b64, idx) => {
+    // 2. 转换为 File 对象并逐个粘贴
+    // 为了稳定性，建议逐张粘贴
+    for (let i = 0; i < base64Images.length; i++) {
+        const b64 = base64Images[i];
+        console.log(`[Upload] 处理第 ${i + 1}/${base64Images.length} 张图片...`);
+
         const resp = await fetch(b64);
         const blob = await resp.blob();
-        return new File([blob], `ref_${idx + 1}.png`, { type: 'image/png' });
-    }));
+        const file = new File([blob], `ref_${i + 1}.png`, { type: 'image/png' });
 
-    console.log('[Upload] ✅ 已准备', files.length, '个文件');
+        await uploadSingleImageViaPaste(inputArea, file);
 
-    // 3. 逐个粘贴图片（多图分批处理）
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        console.log(`[Upload] 📋 粘贴第 ${i + 1}/${files.length} 张图片...`);
-
-        // 聚焦输入框
-        inputEl.focus();
-        await sleep(100);
-
-        // 构造 DataTransfer
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-
-        // 创建粘贴事件
-        const pasteEvent = new ClipboardEvent('paste', {
-            bubbles: true,
-            cancelable: true,
-            clipboardData: dataTransfer
-        });
-
-        // 触发事件
-        inputEl.dispatchEvent(pasteEvent);
-
-        console.log(`[Upload] ✅ 第 ${i + 1} 张已触发粘贴事件`);
-
-        // 等待 Gemini 处理（预览图出现）
-        await sleep(1500);
+        // 间隔一下，避免处理冲突
+        await sleep(1000);
     }
 
-    console.log('[Upload] ⏳ 等待所有图片加载完成...');
+    console.log('[Upload] ⏳ 等待 Gemini 处理文件...');
     await sleep(2000);
 
-    console.log('[Upload] ✅ 粘贴上传完成');
+    // 检查是否上传成功
+    const preview = document.querySelector('img[src^="blob:"], img[src^="data:"], [class*="preview"], [class*="thumbnail"]');
+    if (preview) {
+        console.log('[Upload] ✅ 检测到预览图，上传成功');
+    } else {
+        console.warn('[Upload] ⚠️ 未检测到预览图，可能需要人工确认');
+    }
+
+    console.log('[Upload] ✅ 粘贴流程完成');
 }
 
-// 查找输入区域（保留备用）
+// 单张图片粘贴逻辑
+async function uploadSingleImageViaPaste(targetElement, file) {
+    console.log('[Upload] 📋 触发 Paste 事件:', file.name);
+
+    // 构造 DataTransfer
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+
+    // 构造 ClipboardEvent
+    const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: dataTransfer,
+        dataType: 'text/plain',
+        data: ''
+    });
+
+    // 分发事件
+    targetElement.dispatchEvent(pasteEvent);
+
+    console.log('[Upload] ✅ Paste 事件已发送');
+}
+
+// 查找输入区域
 function findInputArea() {
     const selectors = [
-        'div[contenteditable="true"]',
+        'div[contenteditable="true"]',  // 主输入框
         '[role="textbox"]',
         'textarea',
         '.input-area'
@@ -738,41 +746,7 @@ function findInputArea() {
             return elem;
         }
     }
-
-    console.log('[Upload] ⚠️ 使用 body 作为备用目标');
-    return document.body;
-}
-
-async function waitForUploadComplete() {
-    // 轮询检测：上传后会出现预览图
-    const maxWait = 15000;
-    const start = Date.now();
-
-    return new Promise((resolve) => {
-        const check = setInterval(() => {
-            const previewSelectors = [
-                'img[src^="blob:"]',
-                'img[src^="data:image"]',
-                '[class*="preview"]',
-                '[class*="thumbnail"]',
-                '[class*="uploaded"]'
-            ];
-
-            let found = false;
-            for (const sel of previewSelectors) {
-                if (document.querySelector(sel)) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found || Date.now() - start > maxWait) {
-                console.log(found ? '[Upload] ✅ 检测到预览' : '[Upload] ⏱️ 等待超时');
-                clearInterval(check);
-                resolve();
-            }
-        }, 800);
-    });
+    return null;
 }
 
 // ========== 核心函数：强制确保图片生成模式 ==========
