@@ -16,11 +16,8 @@ const importTxtBtn = document.getElementById('importTxtBtn');
 const importImagesBtn = document.getElementById('importImagesBtn');
 const txtFileInput = document.getElementById('txtFileInput');
 const imageFileInput = document.getElementById('imageFileInput');
-const matchStatus = document.getElementById('matchStatus');
-
-// State Management
-let isRunning = false;
-let associatedImages = new Map(); // LineNumber -> File[]
+// New DOM Element
+const matchDetails = document.getElementById('matchDetails');
 
 // --- File Import Handlers ---
 
@@ -38,39 +35,77 @@ txtFileInput.addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
+// 优化：追加模式，不清除已有图片
 imageFileInput.addEventListener('change', (e) => {
   const files = Array.from(e.target.files);
-  console.log('[Popup] 📸 选择了图片文件:', files.length, '张');
+  console.log('[Popup] 📸 新增图片文件:', files.length, '张');
   if (files.length === 0) return;
 
-  associatedImages.clear();
+  // 注意：不再调用 associatedImages.clear()，支持分批添加
+
   files.forEach(file => {
     console.log('[Popup] 📸 处理文件:', file.name);
     // Regex: Match numbers at start of filename
     const match = file.name.match(/^(\d+)/);
     if (match) {
       const lineNum = parseInt(match[1], 10);
-      console.log('[Popup] 📸 匹配成功: 文件', file.name, '-> 行号', lineNum);
+
       if (!associatedImages.has(lineNum)) {
         associatedImages.set(lineNum, []);
       }
-      associatedImages.get(lineNum).push(file);
+
+      // 避免重复添加同名文件
+      const existing = associatedImages.get(lineNum);
+      if (!existing.some(f => f.name === file.name)) {
+        existing.push(file);
+        console.log('[Popup] 📸 匹配成功(追加): 文件', file.name, '-> 行号', lineNum);
+      } else {
+        console.log('[Popup] ⚠️ 跳过重复文件:', file.name);
+      }
     } else {
       console.warn('[Popup] ⚠️ 文件名未匹配:', file.name, '(需以数字开头，如 1_image.jpg)');
     }
   });
-  console.log('[Popup] 📸 匹配结果:', Object.fromEntries(associatedImages));
+
+  // 清空 input value，允许再次选择相同文件
+  imageFileInput.value = '';
+
+  console.log('[Popup] 📸 当前匹配总览:', Object.fromEntries(associatedImages));
   updateMatchingUI();
 });
 
 function updateMatchingUI() {
   const totalImgs = Array.from(associatedImages.values()).flat().length;
   const totalLines = associatedImages.size;
+
   if (totalImgs > 0) {
-    matchStatus.textContent = `已关联 ${totalImgs} 张参考图 (共涉及 ${totalLines} 条提示词)`;
+    matchStatus.textContent = `✅ 已关联 ${totalImgs} 张参考图 (覆盖 ${totalLines} 条任务)`;
     matchStatus.classList.remove('hidden');
+
+    // 生成详细预览
+    matchDetails.innerHTML = '';
+    matchDetails.classList.remove('hidden');
+
+    // 只显示有图片的行
+    // 先排序 key
+    const sortedKeys = Array.from(associatedImages.keys()).sort((a, b) => a - b);
+
+    sortedKeys.forEach(lineNum => {
+      const imgs = associatedImages.get(lineNum);
+      const row = document.createElement('div');
+      row.className = 'match-row';
+      row.style.fontSize = '12px';
+      row.style.marginTop = '4px';
+      row.style.color = '#ccc';
+
+      const filenames = imgs.map(f => f.name).join(', ');
+      row.textContent = `Line ${lineNum}: [${imgs.length}图] ${filenames}`;
+      matchDetails.appendChild(row);
+    });
+
   } else {
     matchStatus.classList.add('hidden');
+    matchDetails.classList.add('hidden');
   }
 }
 
