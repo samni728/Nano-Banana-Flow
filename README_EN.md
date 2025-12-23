@@ -7,17 +7,22 @@
 [![Version](https://img.shields.io/badge/version-1.2.0-gold.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://github.com/AppleResearcher/Nano-Banana-Flow)
 
-[中文文档](README.md)
+[中文说明](README.md)
 
-A powerful Chrome extension that helps you batch generate images on Gemini and automatically download them.
+> **Keep Nano Banana Working Until Dawn.**
+
+A powerful Chrome extension designed to help you batch generate images on Gemini with automatic downloading, completely freeing your hands.
 
 ## ✨ Features
 
-- 🎨 **Batch Generation**: Input multiple prompts at once, automatically generate images one by one
-- 📥 **Auto Download**: Generated images are automatically downloaded with sequential naming
-- 📄 **TXT Import**: [v1.2.0+] Load bulk prompts from local .txt files with one click.
-- 🖼️ **Image-to-Image**: [v1.2.0+] Support uploading local reference images with smart matching.
-- 📊 **Real-time Progress**: Intuitive progress bar showing current generation status
+- 🎨 **Batch Generation**: Input multiple prompts at once and generate them automatically one by one.
+- 📥 **Auto Download**: Automatically download images after generation, supporting custom save directories.
+- 📄 **TXT Import**: [v1.2.0+] One-click import of massive prompts from local TXT files.
+- 🖼️ **Image-to-Image**: [v1.2.0+] Full support for reference images!
+    - **Folder Import**: Import an entire folder of reference images.
+    - **Smart Matching**: Auto-associate by task index (e.g., `1_xxx.jpg` for Task 1).
+    - **Visual Feedback**: Preview associated images for each task before generation.
+- 📊 **Real-time Progress**: Intuitive progress bar showing generation status.
 - 💾 **Smart Save**: Automatically saves your last input prompts
 - ⏹️ **Task Control**: Stop running tasks at any time
 
