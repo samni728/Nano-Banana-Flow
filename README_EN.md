@@ -168,6 +168,14 @@ Nano-Banana-Flow/
 - Auto download functionality
 - Progress display
 
+## ☕ Buy Me a Coffee
+
+If this tool has helped you, feel free to buy me a coffee. Your support keeps me motivated to keep improving it!
+
+![Appreciation QR Code](https://gt.topgpt.us/upload/qr2.png)
+
+---
+
 ## 📄 License & Attribution
 
 This project is released under the **MIT License**. We encourage technical exchange and innovation; you are free to use, modify, and distribute the code within the scope of the license.
