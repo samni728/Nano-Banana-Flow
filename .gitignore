@@ -1,6 +1,7 @@
 # Backups directory
 backups/
 Nano-Banana-Flow*Release/
+gemini-watermark-remover/
 
 # Release zip files
 *.zip
@@ -21,3 +22,7 @@ CLOUDFLARE_GUIDE.md
 GEMINI_PRO_DEV_GUIDE.md
 nbf_config.json
 server_config_example.json
+
+# Redundant / Temporary
+gemini-watermark-remover/
+log.md

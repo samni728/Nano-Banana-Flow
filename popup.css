@@ -7,6 +7,8 @@
   --glass-bg: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.1);
   --input-bg: rgba(0, 0, 0, 0.5);
+  --lab-bg: rgba(255, 215, 0, 0.05);
+  --lab-border: rgba(255, 215, 0, 0.2);
 }
 
 * {
@@ -319,99 +321,76 @@ body {
 /* Action Area */
 .action-area {
   margin-top: 8px;
-  /* Reduced from 12px */
   margin-bottom: 4px;
-  /* Reduced from 24px */
   z-index: 10;
   display: flex;
-  gap: 12px;
+  gap: 8px;
+  /* Slightly reduced gap */
 }
 
-.btn-gold {
+.btn-gold,
+.btn-wr,
+.btn-secondary {
   flex: 1;
-  padding: 10px;
-  /* Reduced from 14px */
+  padding: 10px 4px;
+  /* Narrower horizontal padding */
   border: none;
   border-radius: 8px;
-  /* Slightly less rounded */
-  background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dark) 100%);
-  color: #000;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14px;
+  /* Slightly smaller for 3 buttons */
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dark) 100%);
+  color: #000;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
-  /* text-transform: uppercase; Removed for cleaner look */
-  letter-spacing: 0.5px;
 }
 
-.btn-gold:hover {
+.btn-wr {
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.btn-wr:hover {
+  background: rgba(255, 215, 0, 0.25);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
-  filter: brightness(1.1);
-}
-
-.btn-gold:active {
-  transform: translateY(1px);
-}
-
-/* Stop State (Red) */
-.btn-gold.stop-mode {
-  background: linear-gradient(135deg, #ff4d4d 0%, #ff3333 100%);
-  /* Brighter red */
-  color: white;
-  box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
 }
 
 .btn-secondary {
-  flex: 1;
-  /* Equal width */
-  height: auto;
-  /* Let padding define height */
-  padding: 10px;
-  /* Reduced from 14px */
   background: #f1f3f4;
-  /* Light gray */
-  border: none;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
   color: #333;
-  /* Dark text */
-  font-weight: 700;
-  font-size: 15px;
 }
 
+.btn-gold:hover,
 .btn-secondary:hover {
-  background: #e0e2e4;
   transform: translateY(-1px);
 }
 
-.btn-secondary:active {
-  transform: translateY(1px);
+.lab-status {
+  font-size: 11px;
+  color: var(--accent-gold);
+  text-align: center;
+  font-weight: 500;
+  margin-top: 4px;
 }
 
 /* Progress Section */
 .progress-section {
-  position: absolute;
-  bottom: 120px;
-  /* Above button */
-  left: 20px;
-  right: 20px;
+  position: relative;
+  margin-top: 8px;
   background: rgba(0, 0, 0, 0.6);
   border-radius: 8px;
   padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(4px);
-  z-index: 5;
 }
 
 .progress-info {

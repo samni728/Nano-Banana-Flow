@@ -173,6 +173,10 @@ Nano-Banana-Flow/
 > **Original Project:** [Nano Banana Flow](https://github.com/AppleResearcher/Nano-Banana-Flow)
 > **Author:** AppleResearcher
 
+**✨ 鸣谢 (Acknowledgements)：**
+
+本项目去水印功能的核心逻辑参考并集成了 [gemini-watermark-remover](https://github.com/journey-ad/gemini-watermark-remover) 项目。感谢原作者 [journey-ad](https://github.com/journey-ad) 的优秀工作。
+
 尊重开发者的劳动成果，共建良好的开源生态。
 Respect the work of developers and help build a healthy open source ecosystem.
 

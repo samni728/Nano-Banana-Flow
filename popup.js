@@ -14,12 +14,15 @@ const statusIndicator = document.getElementById('statusIndicator');
 // New Advanced Features DOM
 const importTxtBtn = document.getElementById('importTxtBtn');
 const importImagesBtn = document.getElementById('importImagesBtn');
-const importFolderBtn = document.getElementById('importFolderBtn'); // New
+const importFolderBtn = document.getElementById('importFolderBtn');
 
 const txtFileInput = document.getElementById('txtFileInput');
 const imageFileInput = document.getElementById('imageFileInput');
-const folderInput = document.getElementById('folderInput'); // New
-const matchDetails = document.getElementById('matchDetails'); // New
+const folderInput = document.getElementById('folderInput');
+const matchDetails = document.getElementById('matchDetails');
+const openLabBtn = document.getElementById('openLabBtn');
+const manualWatermarkInput = document.getElementById('manualWatermarkInput');
+const labStatus = document.getElementById('labStatus');
 
 // State Management
 let isRunning = false;
@@ -45,6 +48,97 @@ if (txtFileInput) {
       promptsTextarea.dispatchEvent(new Event('input'));
     };
     reader.readAsText(file);
+  });
+}
+
+// --- Watermark Lab Logic ---
+
+if (openLabBtn) openLabBtn.addEventListener('click', () => manualWatermarkInput.click());
+
+if (manualWatermarkInput) {
+  manualWatermarkInput.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) return;
+
+    console.log('[Lab] 🧪 启动去水印实验室, 处理文件数:', files.length);
+    labStatus.textContent = `准备处理 ${files.length} 张图片...`;
+    labStatus.classList.remove('hidden');
+    openLabBtn.disabled = true;
+
+    try {
+      // 1. 初始化引擎
+      labStatus.textContent = '🚀 正在初始化引擎...';
+      const engine = await window.WatermarkEngine.create();
+
+      // 2. 逐个处理
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        labStatus.textContent = `🧪 正在脱模: ${i + 1}/${files.length}`;
+        console.log(`[Lab] 正在处理: ${file.name}`);
+
+        try {
+          // 读取文件为 Data URL
+          const dataUrl = await fileToBase64(file);
+
+          // 加载为 Image 对象
+          const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = reject;
+            image.src = dataUrl;
+          });
+
+          // 执行去水印
+          const canvas = await engine.removeWatermarkFromImage(img);
+
+          // 核心逻辑：智能识别后缀并保持一致
+          const fileName = file.name;
+          const lastDotIndex = fileName.lastIndexOf('.');
+          const baseName = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
+          const originalExt = lastDotIndex !== -1 ? fileName.substring(lastDotIndex + 1).toLowerCase() : 'png';
+
+          let mimeType = 'image/png';
+          let finalExt = 'png';
+
+          // 如果原图是 jpg/jpeg，我们以最高画质导出为 jpg，否则统一导出为 png
+          if (originalExt === 'jpg' || originalExt === 'jpeg') {
+            mimeType = 'image/jpeg';
+            finalExt = originalExt;
+          }
+
+          // --- 核心修复：使用 <a> 标签直接下载，保持 Blob 在同一上下文 ---
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, 1.0));
+          const blobUrl = URL.createObjectURL(blob);
+
+          // 构造最终文件名：原图文件名_wr.后缀
+          const cleanName = `${baseName}_wr.${finalExt}`;
+
+          // 使用 <a> 标签触发下载（不经过 background.js）
+          const downloadLink = document.createElement('a');
+          downloadLink.href = blobUrl;
+          downloadLink.download = cleanName;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+          // 延迟释放 Blob URL
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+
+          console.log(`[Lab] ✅ 处理完成并下载: ${cleanName}`);
+        } catch (err) {
+          console.error(`[Lab] ❌ 文件 ${file.name} 处理失败:`, err);
+        }
+      }
+
+      labStatus.textContent = `🎉 全部处理完成！已下载 ${files.length} 张图片`;
+    } catch (err) {
+      console.error('[Lab] ❌ 引擎初始化失败:', err);
+      labStatus.textContent = '❌ 引擎加载失败';
+    } finally {
+      openLabBtn.disabled = false;
+      manualWatermarkInput.value = ''; // Reset
+      setTimeout(() => labStatus.classList.add('hidden'), 5000);
+    }
   });
 }
 
@@ -280,10 +374,16 @@ async function startGeneration(tasks, directory) {
 
     // Prepare Tasks: Convert Files to Base64 for message passing
     const processedTasks = await Promise.all(tasks.map(async (task) => {
-      const imgData = await Promise.all(task.images.map(file => fileToBase64(file)));
+      const imgData = await Promise.all(task.images.map(async (file) => {
+        const base64 = await fileToBase64(file);
+        return {
+          data: base64,
+          name: file.name
+        };
+      }));
       return {
         prompt: task.prompt,
-        images: imgData // Array of strings (base64)
+        images: imgData // Array of {data, name}
       };
     }));
 

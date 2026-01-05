@@ -7,6 +7,7 @@
   <title>Nano Banana Flow</title>
   <link rel="stylesheet" href="popup.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="lib/watermark.js"></script>
 </head>
 
 <body>
@@ -71,6 +72,7 @@
         <input type="file" id="txtFileInput" accept=".txt" style="display: none;">
         <input type="file" id="imageFileInput" accept="image/*" multiple style="display: none;">
         <input type="file" id="folderInput" webkitdirectory directory style="display: none;">
+        <input type="file" id="manualWatermarkInput" accept="image/*" multiple style="display: none;">
       </div>
 
       <!-- Action Area -->
@@ -79,11 +81,16 @@
           <span class="btn-icon">🎨</span>
           <span class="btn-text">批量生成</span>
         </button>
+        <button id="openLabBtn" class="btn-wr">
+          <span class="btn-icon">⚡</span>
+          <span class="btn-text">去水印</span>
+        </button>
         <button id="clearBtn" class="btn-secondary" title="清空提示词">
           <span class="btn-icon">🗑️</span>
           <span class="btn-text">清空</span>
         </button>
       </div>
+      <div id="labStatus" class="lab-status hidden">正在处理: 0/0</div>
 
       <!-- Progress Section (Overlay/Integrated) -->
       <div id="progressArea" class="progress-section hidden">

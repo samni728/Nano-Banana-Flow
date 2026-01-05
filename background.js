@@ -112,6 +112,39 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return false;
     }
 
+    // --- 处理图片抓取 (解决 Content Script 跨域问题) ---
+    if (request.action === 'fetch_image') {
+        const fetchUrl = request.url;
+        console.log(`[BG] 🌐 代理抓取图片: ${fetchUrl?.substring(0, 60)}...`);
+
+        fetch(fetchUrl, {
+            mode: 'cors',
+            credentials: 'omit' // 避免一些 cookie 相关的跨域限制
+        })
+            .then(response => {
+                console.log(`[BG] Fetch 响应状态: ${response.status} ${response.statusText}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return response.blob();
+            })
+            .then(blob => {
+                console.log(`[BG] 成功获取图片 Blob (大小: ${blob.size} 字节)`);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    sendResponse({ success: true, dataUrl: reader.result });
+                };
+                reader.onerror = (e) => {
+                    console.error('[BG] FileReader 错误:', e);
+                    sendResponse({ success: false, error: 'FileReader failed to convert blob to dataUrl' });
+                };
+                reader.readAsDataURL(blob);
+            })
+            .catch(error => {
+                console.error('[BG] ❌ 抓取图片失败:', error.message);
+                sendResponse({ success: false, error: `Fetch failed: ${error.message}` });
+            });
+        return true; // 保持异步
+    }
+
     // 未知消息类型
     console.warn('[BG] 未知消息类型:', request.action);
     return false;

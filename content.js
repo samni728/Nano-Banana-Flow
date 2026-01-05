@@ -115,7 +115,16 @@ async function handleGenerateImage(prompt, images, directory, index, total) {
 
         // ========== 步骤 5.5: 捕获当前生成的图片URL ==========
         // 传入生成前的图片数量，用于验证新图片是否出现
-        await captureCurrentImageUrl(index, preGenerationImageCount);
+        // 如果有参考图，取第一个图的名字作为基础
+        let customBaseName = null;
+        if (images && images.length > 0 && images[0].name) {
+            const fileName = images[0].name;
+            const lastDotIndex = fileName.lastIndexOf('.');
+            customBaseName = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
+            console.log(`[步骤 5.5/${index}] 检测到参考图，以此命名基础: ${customBaseName}`);
+        }
+
+        await captureCurrentImageUrl(index, preGenerationImageCount, customBaseName);
 
         // ========== 步骤 6: 检查是否是最后一张，如果是则触发批量下载 ==========
         if (index === total) {
@@ -475,8 +484,8 @@ function countValidImages() {
 }
 
 // ========== 捕获当前生成的图片URL ==========
-async function captureCurrentImageUrl(index, preCount) {
-    console.log(`[Capture ${index}] 正在捕获当前图片URL (生成前数量: ${preCount})...`);
+async function captureCurrentImageUrl(index, preCount, customName = null) {
+    console.log(`[Capture ${index}] 正在捕获当前图片URL (生成前数量: ${preCount}, 自定义名: ${customName || '无'})...`);
 
     try {
         // 1. 轮询等待新图片出现
@@ -532,7 +541,8 @@ async function captureCurrentImageUrl(index, preCount) {
         // 6. 存入列表
         batchImageUrls.push({
             index: index,
-            url: fullSizeUrl
+            url: fullSizeUrl,
+            customName: customName
         });
 
     } catch (error) {
@@ -543,6 +553,7 @@ async function captureCurrentImageUrl(index, preCount) {
 // ========== 批量下载图片（基于已捕获的列表） ==========
 async function batchDownloadImagesFromList(directory) {
     console.log(`[Batch Download] 启动批量下载流程，共 ${batchImageUrls.length} 张图片...`);
+    console.log(`[Batch Download] 💡 提示：如需去水印，请使用插件内的"去水印"按钮手动处理已下载的图片`);
 
     if (batchImageUrls.length === 0) {
         console.warn(`[Batch Download] 列表为空，没有可下载的图片`);
@@ -550,48 +561,96 @@ async function batchDownloadImagesFromList(directory) {
     }
 
     try {
-        // 遍历下载
+        // 遍历处理
         for (let i = 0; i < batchImageUrls.length; i++) {
             const item = batchImageUrls[i];
             const pageIndex = item.index;
             const url = item.url;
 
-            console.log(`[Batch Download] 处理第 ${pageIndex} 张...`);
+            console.log(`\n--- 正在处理第 ${pageIndex} 张图片下载 ---`);
 
-            // 构造文件名
-            let filename = `page${pageIndex}.png`;
+            // 构造基础文件名 (Smart Naming: 优先使用参考图原名)
+            let baseFilename = item.customName || `page${pageIndex}`;
+            let cleanDir = '';
             if (directory) {
-                const cleanDir = directory.replace(/^\/+|\/+$/g, '');
-                if (cleanDir) {
-                    filename = `${cleanDir}/${filename}`;
-                }
+                cleanDir = directory.replace(/^\/+|\/+$/g, '');
             }
 
             // 发送下载请求
-            console.log(`[Batch Download] 发送下载请求: URL=${url?.substring(0, 80)}...`);
+            const originalFilename = cleanDir ? `${cleanDir}/${baseFilename}.png` : `${baseFilename}.png`;
+            console.log(`[Batch Download] 发送下载请求: ${originalFilename}`);
             chrome.runtime.sendMessage({
                 action: 'download_hq',
                 url: url,
-                filename: filename
-            }, (response) => {
-                if (chrome.runtime.lastError) {
-                    console.error(`❌ [Batch Download] 图片 ${pageIndex} 通信错误:`, chrome.runtime.lastError.message);
-                } else if (response && response.status === 'success') {
-                    console.log(`✅ [Batch Download] 图片 ${pageIndex} 下载已启动`);
-                } else {
-                    console.error(`❌ [Batch Download] 图片 ${pageIndex} 下载失败, 响应:`, response);
-                }
+                filename: originalFilename
             });
 
-            // 稍微间隔一下，避免瞬间发起太多请求
+            // 稍微间隔一下
             await sleep(500);
         }
 
-        console.log(`✅ [Batch Download] 批量下载请求发送完毕`);
+        console.log(`\n🎉 所有下载任务已分发完毕`);
+        console.log(`💡 如需去水印，请在插件面板点击"⚡ 去水印"按钮处理已下载的图片`);
 
     } catch (error) {
-        console.error(`❌ [Batch Download] 批量下载流程异常:`, error.message);
+        console.error(`❌ [Batch Download] 批量下载流程整体异常:`, error.message);
     }
+}
+
+/**
+ * 处理单张图片的去水印逻辑
+ * @param {WatermarkEngine} engine 
+ * @param {string} url 
+ * @returns {Promise<string>} 处理后的 Data URL
+ */
+async function processWatermark(engine, url) {
+    let dataUrl = null;
+
+    // 1. 获取图片数据
+    console.log(`[Batch Download] 正在获取图片数据: ${url.substring(0, 50)}...`);
+
+    try {
+        // 策略 A: 尝试在 Content Script 直接 Fetch (最快，如果 CSP 允许)
+        console.log('[Batch Download] 尝试直接 Fetch...');
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`);
+        const blob = await resp.blob();
+        dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+        console.log('[Batch Download] 直接 Fetch 成功');
+    } catch (directError) {
+        console.warn('[Batch Download] 直接 Fetch 失败，准备通过 Background Fallback:', directError.message);
+
+        // 策略 B: 回退到 Background 代理
+        const response = await new Promise((resolve) => {
+            chrome.runtime.sendMessage({ action: 'fetch_image', url: url }, resolve);
+        });
+
+        if (response && response.success) {
+            dataUrl = response.dataUrl;
+            console.log('[Batch Download] Background Fallback 成功');
+        } else {
+            throw new Error(`Background fetch failed: ${response?.error || 'unknown error'}`);
+        }
+    }
+
+    // 2. 将 Data URL 载入 Image 对象
+    const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = () => reject(new Error('Image load failed from dataUrl'));
+        i.src = dataUrl;
+    });
+
+    // 3. 使用引擎处理
+    const canvas = await engine.removeWatermarkFromImage(img);
+
+    // 4. 转为 Data URL (PNG 格式)
+    return canvas.toDataURL('image/png');
 }
 
 // ========== 获取完整尺寸图片 URL ==========

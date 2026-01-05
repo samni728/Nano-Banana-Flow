@@ -32,9 +32,21 @@
                 "https://gemini.google.com/*"
             ],
             "js": [
+                "lib/watermark.js",
                 "content.js"
             ],
             "run_at": "document_idle"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "images/bg_48.png",
+                "images/bg_96.png"
+            ],
+            "matches": [
+                "https://gemini.google.com/*"
+            ]
         }
     ],
     "icons": {
