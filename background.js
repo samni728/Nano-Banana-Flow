@@ -69,9 +69,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }, (downloadId) => {
             if (chrome.runtime.lastError) {
                 console.error(`❌ [BG] 下载失败: ${chrome.runtime.lastError.message}`);
-                sendResponse({ status: 'error', message: chrome.runtime.lastError.message });
+                console.error(`[BG] 尝试的文件名: ${request.filename}`);
+                // 如果 filename 被拒绝，尝试不带目录的文件名
+                const fallbackFilename = request.filename?.split('/').pop() || 'download.png';
+                console.log(`[BG] 尝试回退文件名: ${fallbackFilename}`);
+                chrome.downloads.download({
+                    url: request.url,
+                    filename: fallbackFilename,
+                    conflictAction: 'uniquify',
+                    saveAs: false
+                });
+                sendResponse({ status: 'fallback', message: chrome.runtime.lastError.message });
             } else {
-                console.log(`✅ [BG] 下载已启动 (ID: ${downloadId})`);
+                console.log(`✅ [BG] 下载已启动 (ID: ${downloadId}, 文件名: ${request.filename})`);
                 sendResponse({ status: 'success', downloadId: downloadId });
             }
         });
