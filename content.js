@@ -569,9 +569,10 @@ async function batchDownloadImagesFromList(directory) {
 
             console.log(`\n--- 正在处理第 ${pageIndex} 张图片下载 ---`);
 
-            // 构造文件名 (兼容 Windows 和 Mac)
+            // 构造文件名 (智能命名：优先使用参考图原名，兼容 Windows 和 Mac)
             // Chrome downloads API 统一使用正斜杠 /
-            let filename = `page${pageIndex}.png`;
+            let baseFilename = item.customName || `page${pageIndex}`;
+            let filename = `${baseFilename}.png`;
 
             if (directory) {
                 // 1. 将反斜杠统一转换为正斜杠 (Windows 兼容)

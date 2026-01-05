@@ -106,38 +106,40 @@ if (manualWatermarkInput) {
             finalExt = originalExt;
           }
 
-          // --- 支持自定义目录：发送 Base64 数据给 background.js 处理 ---
-          const blob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, 1.0));
-
-          // 将 Blob 转为 Base64（可跨上下文传递）
-          const base64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-          });
+          // --- 核心修复：使用 background.js 下载，支持自定义目录 ---
+          const outputDataUrl = canvas.toDataURL(mimeType, 1.0);
 
           // 构造最终文件名：原图文件名_wr.后缀
-          const cleanName = `${baseName}_wr.${finalExt}`;
+          let finalFileName = `${baseName}_wr.${finalExt}`;
 
-          // 获取用户设置的保存目录
-          const directory = directoryInput?.value?.trim() || '';
-
-          // 构造完整路径（兼容 Mac/Windows）
-          let fullPath = cleanName;
+          // 获取用户输入的目录
+          const directory = (directoryInput && directoryInput.value) ? directoryInput.value.trim() : '';
           if (directory) {
-            // 统一使用正斜杠，Chrome 会自动处理
-            const cleanDir = directory.replace(/^[\/\\]+|[\/\\]+$/g, '');
-            fullPath = `${cleanDir}/${cleanName}`;
+            // 拼接目录 (background.js 会处理斜杠兼容性)
+            finalFileName = `${directory}/${finalFileName}`;
           }
 
-          // 发送给 background.js 下载
           chrome.runtime.sendMessage({
-            action: 'download_base64',
-            data: base64,
-            filename: fullPath
+            action: 'download_hq',
+            url: outputDataUrl,
+            filename: finalFileName
+          }, async (response) => {
+            if (response && response.status === 'success') {
+              console.log(`[Lab] ✅ 处理完成并分发下载: ${finalFileName}`);
+            } else {
+              console.error(`[Lab] ❌ 下载分发失败:`, response?.message);
+              // Fallback: 如果 background 失败，作为最后的尝试使用之前的 anchor 下载
+              const fallbackBlob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, 1.0));
+              const fallbackUrl = URL.createObjectURL(fallbackBlob);
+              const a = document.createElement('a');
+              a.href = fallbackUrl;
+              a.download = `${baseName}_wr.${finalExt}`;
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(fallbackUrl), 3000);
+            }
           });
 
-          console.log(`[Lab] ✅ 处理完成并下载: ${fullPath}`);
+          console.log(`[Lab] ✅ 处理完成: ${finalFileName}`);
         } catch (err) {
           console.error(`[Lab] ❌ 文件 ${file.name} 处理失败:`, err);
         }

@@ -53,7 +53,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // --- 处理高清图下载请求 ---
     if (request.action === 'download_hq') {
         console.log(`[BG] 📥 接收到下载任务: ${request.filename}`);
-        console.log(`[BG] 📥 下载URL: ${request.url?.substring(0, 100)}...`);
 
         if (!request.url) {
             console.error(`[BG] ❌ URL为空，无法下载`);
@@ -61,48 +60,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
 
+        // 统一将反斜杠转换为正斜杠 (Windows 兼容)
+        let safeFilename = request.filename.replace(/\\/g, '/');
+        // 移除多余的斜杠
+        safeFilename = safeFilename.replace(/\/+/g, '/').replace(/^\/+/g, '');
+
         chrome.downloads.download({
             url: request.url,
-            filename: request.filename,
-            conflictAction: 'uniquify',
-            saveAs: false
-        }, (downloadId) => {
-            if (chrome.runtime.lastError) {
-                console.error(`❌ [BG] 下载失败: ${chrome.runtime.lastError.message}`);
-                console.error(`[BG] 尝试的文件名: ${request.filename}`);
-                // 如果 filename 被拒绝，尝试不带目录的文件名
-                const fallbackFilename = request.filename?.split('/').pop() || 'download.png';
-                console.log(`[BG] 尝试回退文件名: ${fallbackFilename}`);
-                chrome.downloads.download({
-                    url: request.url,
-                    filename: fallbackFilename,
-                    conflictAction: 'uniquify',
-                    saveAs: false
-                });
-                sendResponse({ status: 'fallback', message: chrome.runtime.lastError.message });
-            } else {
-                console.log(`✅ [BG] 下载已启动 (ID: ${downloadId}, 文件名: ${request.filename})`);
-                sendResponse({ status: 'success', downloadId: downloadId });
-            }
-        });
-
-        return true; // 保持异步通道
-    }
-
-    // --- 处理 Base64 数据下载（支持自定义目录） ---
-    if (request.action === 'download_base64') {
-        console.log(`[BG] 📥 接收到 Base64 下载任务: ${request.filename}`);
-
-        if (!request.data) {
-            console.error(`[BG] ❌ Base64 数据为空`);
-            sendResponse({ status: 'error', message: 'Base64 数据为空' });
-            return true;
-        }
-
-        // 直接使用 data URL 下载（background.js 可以使用 data URL）
-        chrome.downloads.download({
-            url: request.data,
-            filename: request.filename,
+            filename: safeFilename,
             conflictAction: 'uniquify',
             saveAs: false
         }, (downloadId) => {
@@ -115,7 +80,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
         });
 
-        return true;
+        return true; // 保持异步通道
     }
 
     // --- 处理停止任务 ---
