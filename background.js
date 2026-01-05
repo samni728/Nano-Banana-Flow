@@ -79,6 +79,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // 保持异步通道
     }
 
+    // --- 处理 Base64 数据下载（支持自定义目录） ---
+    if (request.action === 'download_base64') {
+        console.log(`[BG] 📥 接收到 Base64 下载任务: ${request.filename}`);
+
+        if (!request.data) {
+            console.error(`[BG] ❌ Base64 数据为空`);
+            sendResponse({ status: 'error', message: 'Base64 数据为空' });
+            return true;
+        }
+
+        // 直接使用 data URL 下载（background.js 可以使用 data URL）
+        chrome.downloads.download({
+            url: request.data,
+            filename: request.filename,
+            conflictAction: 'uniquify',
+            saveAs: false
+        }, (downloadId) => {
+            if (chrome.runtime.lastError) {
+                console.error(`❌ [BG] 下载失败: ${chrome.runtime.lastError.message}`);
+                sendResponse({ status: 'error', message: chrome.runtime.lastError.message });
+            } else {
+                console.log(`✅ [BG] 下载已启动 (ID: ${downloadId})`);
+                sendResponse({ status: 'success', downloadId: downloadId });
+            }
+        });
+
+        return true;
+    }
+
     // --- 处理停止任务 ---
     if (request.action === 'stopTask') {
         console.log('[BG] 收到停止指令');

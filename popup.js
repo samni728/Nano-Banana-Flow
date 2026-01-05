@@ -106,25 +106,38 @@ if (manualWatermarkInput) {
             finalExt = originalExt;
           }
 
-          // --- 核心修复：使用 <a> 标签直接下载，保持 Blob 在同一上下文 ---
+          // --- 支持自定义目录：发送 Base64 数据给 background.js 处理 ---
           const blob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, 1.0));
-          const blobUrl = URL.createObjectURL(blob);
+
+          // 将 Blob 转为 Base64（可跨上下文传递）
+          const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
 
           // 构造最终文件名：原图文件名_wr.后缀
           const cleanName = `${baseName}_wr.${finalExt}`;
 
-          // 使用 <a> 标签触发下载（不经过 background.js）
-          const downloadLink = document.createElement('a');
-          downloadLink.href = blobUrl;
-          downloadLink.download = cleanName;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
+          // 获取用户设置的保存目录
+          const directory = directoryInput?.value?.trim() || '';
 
-          // 延迟释放 Blob URL
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+          // 构造完整路径（兼容 Mac/Windows）
+          let fullPath = cleanName;
+          if (directory) {
+            // 统一使用正斜杠，Chrome 会自动处理
+            const cleanDir = directory.replace(/^[\/\\]+|[\/\\]+$/g, '');
+            fullPath = `${cleanDir}/${cleanName}`;
+          }
 
-          console.log(`[Lab] ✅ 处理完成并下载: ${cleanName}`);
+          // 发送给 background.js 下载
+          chrome.runtime.sendMessage({
+            action: 'download_base64',
+            data: base64,
+            filename: fullPath
+          });
+
+          console.log(`[Lab] ✅ 处理完成并下载: ${fullPath}`);
         } catch (err) {
           console.error(`[Lab] ❌ 文件 ${file.name} 处理失败:`, err);
         }
