@@ -569,20 +569,28 @@ async function batchDownloadImagesFromList(directory) {
 
             console.log(`\n--- 正在处理第 ${pageIndex} 张图片下载 ---`);
 
-            // 构造基础文件名 (Smart Naming: 优先使用参考图原名)
-            let baseFilename = item.customName || `page${pageIndex}`;
-            let cleanDir = '';
+            // 构造文件名 (兼容 Windows 和 Mac)
+            // Chrome downloads API 统一使用正斜杠 /
+            let filename = `page${pageIndex}.png`;
+
             if (directory) {
-                cleanDir = directory.replace(/^\/+|\/+$/g, '');
+                // 1. 将反斜杠统一转换为正斜杠 (Windows 兼容)
+                let cleanDir = directory.replace(/\\/g, '/');
+                // 2. 移除首尾斜杠
+                cleanDir = cleanDir.replace(/^\/+|\/+$/g, '');
+
+                if (cleanDir) {
+                    filename = `${cleanDir}/${filename}`;
+                    console.log(`[Batch Download] 使用自定义目录: ${cleanDir}`);
+                }
             }
 
             // 发送下载请求
-            const originalFilename = cleanDir ? `${cleanDir}/${baseFilename}.png` : `${baseFilename}.png`;
-            console.log(`[Batch Download] 发送下载请求: ${originalFilename}`);
+            console.log(`[Batch Download] 发送下载请求: ${filename}`);
             chrome.runtime.sendMessage({
                 action: 'download_hq',
                 url: url,
-                filename: originalFilename
+                filename: filename
             });
 
             // 稍微间隔一下
