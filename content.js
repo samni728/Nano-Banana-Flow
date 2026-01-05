@@ -553,7 +553,6 @@ async function captureCurrentImageUrl(index, preCount, customName = null) {
 // ========== 批量下载图片（基于已捕获的列表） ==========
 async function batchDownloadImagesFromList(directory) {
     console.log(`[Batch Download] 启动批量下载流程，共 ${batchImageUrls.length} 张图片...`);
-    console.log(`[Batch Download] 💡 提示：如需去水印，请使用插件内的"去水印"按钮手动处理已下载的图片`);
 
     if (batchImageUrls.length === 0) {
         console.warn(`[Batch Download] 列表为空，没有可下载的图片`);
@@ -561,48 +560,49 @@ async function batchDownloadImagesFromList(directory) {
     }
 
     try {
-        // 遍历处理
+        // 遍历下载
         for (let i = 0; i < batchImageUrls.length; i++) {
             const item = batchImageUrls[i];
             const pageIndex = item.index;
             const url = item.url;
 
-            console.log(`\n--- 正在处理第 ${pageIndex} 张图片下载 ---`);
+            console.log(`[Batch Download] 处理第 ${pageIndex} 张...`);
 
-            // 构造文件名 (智能命名：优先使用参考图原名，兼容 Windows 和 Mac)
-            // Chrome downloads API 统一使用正斜杠 /
+            // 构造文件名 (智能命名：优先使用参考图原名)
             let baseFilename = item.customName || `page${pageIndex}`;
             let filename = `${baseFilename}.png`;
 
             if (directory) {
-                // 1. 将反斜杠统一转换为正斜杠 (Windows 兼容)
-                let cleanDir = directory.replace(/\\/g, '/');
-                // 2. 移除首尾斜杠
-                cleanDir = cleanDir.replace(/^\/+|\/+$/g, '');
-
+                const cleanDir = directory.replace(/^\/+|\/+$/g, '');
                 if (cleanDir) {
                     filename = `${cleanDir}/${filename}`;
-                    console.log(`[Batch Download] 使用自定义目录: ${cleanDir}`);
                 }
             }
 
             // 发送下载请求
-            console.log(`[Batch Download] 发送下载请求: ${filename}`);
+            console.log(`[Batch Download] 发送下载请求: ${filename} (URL=${url?.substring(0, 50)}...)`);
             chrome.runtime.sendMessage({
                 action: 'download_hq',
                 url: url,
                 filename: filename
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error(`❌ [Batch Download] 图片 ${pageIndex} 通信错误:`, chrome.runtime.lastError.message);
+                } else if (response && response.status === 'success') {
+                    console.log(`✅ [Batch Download] 图片 ${pageIndex} 下载已启动`);
+                } else {
+                    console.error(`❌ [Batch Download] 图片 ${pageIndex} 下载失败, 响应:`, response);
+                }
             });
 
-            // 稍微间隔一下
+            // 稍微间隔一下，避免瞬间发起太多请求
             await sleep(500);
         }
 
-        console.log(`\n🎉 所有下载任务已分发完毕`);
-        console.log(`💡 如需去水印，请在插件面板点击"⚡ 去水印"按钮处理已下载的图片`);
+        console.log(`✅ [Batch Download] 批量下载请求发送完毕`);
 
     } catch (error) {
-        console.error(`❌ [Batch Download] 批量下载流程整体异常:`, error.message);
+        console.error(`❌ [Batch Download] 批量下载流程异常:`, error.message);
     }
 }
 

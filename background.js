@@ -53,6 +53,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // --- 处理高清图下载请求 ---
     if (request.action === 'download_hq') {
         console.log(`[BG] 📥 接收到下载任务: ${request.filename}`);
+        console.log(`[BG] 📥 下载URL: ${request.url?.substring(0, 100)}...`);
 
         if (!request.url) {
             console.error(`[BG] ❌ URL为空，无法下载`);
@@ -60,14 +61,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
 
-        // 统一将反斜杠转换为正斜杠 (Windows 兼容)
-        let safeFilename = request.filename.replace(/\\/g, '/');
-        // 移除多余的斜杠
-        safeFilename = safeFilename.replace(/\/+/g, '/').replace(/^\/+/g, '');
-
         chrome.downloads.download({
             url: request.url,
-            filename: safeFilename,
+            filename: request.filename,
             conflictAction: 'uniquify',
             saveAs: false
         }, (downloadId) => {
